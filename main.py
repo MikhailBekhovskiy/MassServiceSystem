@@ -112,6 +112,7 @@ class MassServiceSystem:
     #--------------------------------------------
     # IMITATION
     # imitation modelling utility functions
+
     # flushing previous run data, for total experiment
     def clear_system(self):
         self.reqs_num = 0
@@ -183,6 +184,9 @@ class MassServiceSystem:
             self.check_on_servs(cur_time)
             self.receive_request(cur_time)
             #print(self.reqs_num)
+        while grid_point < steps:
+            i_sol[grid_point + 1][self.reqs_num] = 1.
+            grid_point += 1
         return i_sol
 
     # multiple runs of imitation modelling, averaged
@@ -207,37 +211,32 @@ class MassServiceSystem:
         y = list()
         for i in range(len(sol)):
             y.append(sol[i][state])
-        plt.plot(x, y)
+        plt.plot(x, y, label=f'p{state}')
 
-    def save_state(self, sol, times, state=0):
-        self.plot_state(sol=sol, times=times, state=state, time=time)
-        plt.savefig(f'plot_lambda{self.lamb}_mu{self.mu}_p{state}_t{time}_s{self.serv_num}_q{self.queue}.png')
-        plt.clf()
-
-    def plot_all(self, sol, times, isImit, isFull=True):
+    def plot_all(self, sol, time, times, isImit, isFull=True, imiRuns=-1, step=-1):
         for state in range(self.states):
             self.plot_state(sol=sol, times=times, state=state)
+        plt.legend()
         if not isFull:
-            plt.savefig(f'imit_run_plot_all_lambda{self.lamb}_mu{self.mu}_t{time}_s{self.serv_num}_q{self.queue}.png')
+            plt.savefig(f'imit_1run_lambda{self.lamb}_mu{self.mu}_s{self.serv_num}_q{self.queue}_t{time}.png')
         elif isImit and isFull:
-            plt.savefig(f'imit_plot_all_lambda{self.lamb}_mu{self.mu}_t{time}_s{self.serv_num}_q{self.queue}.png')
+            plt.savefig(f'imit_{imiRuns}runs_lambda{self.lamb}_mu{self.mu}_s{self.serv_num}_q{self.queue}_t{time}.png')
         else:
-            plt.savefig(f'trad_plot_all_lambda{self.lamb}_mu{self.mu}_t{time}_s{self.serv_num}_q{self.queue}.png')
+            plt.savefig(f'trad_lambda{self.lamb}_mu{self.mu}_s{self.serv_num}_q{self.queue}_t{time}_h{step}.png')
         plt.clf()
 
 if __name__=='__main__':
     # initiating model with parameters
     smo = MassServiceSystem(inflow=5, outflow=1, servers=10, qSize=5)
-    # print(smo.servers)
-    time = 10
-    step = 0.01
-    imiRuns = 1000
+    time = 5
+    step = 0.1
+    imiRuns = 10000
     # running
     t_sol, times = smo.ode45(step=step,time=time)
     i_sol = smo.imitation_experiment(time=time, step=step, runs=imiRuns)
     #print(i_sol)
-    petit_sol = smo.imitation_run(time=time, step=step)
+    #petit_sol = smo.imitation_run(time=time, step=step)
     #print(petit_sol[0])
-    #smo.plot_all(t_sol, times, False)
-    smo.plot_all(i_sol, times, True)
-    smo.plot_all(petit_sol, times, True, False)
+    smo.plot_all(t_sol, time=time, times=times, isImit=False, step=step)
+    smo.plot_all(i_sol, time=time, times=times, isImit=True, imiRuns=imiRuns, step=step)
+    #smo.plot_all(petit_sol, times, True, False)
